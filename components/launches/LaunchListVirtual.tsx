@@ -86,7 +86,7 @@ export default function LaunchListVirtual({
           ))}
         </div>
       ) : (
-        <div style={{ height: totalSize + (isFetching && hasMore ? ROW_HEIGHT : 0) }} className="relative">
+        <div style={{ height: (isFetching && hasMore ? ROW_HEIGHT + totalSize : 0) }} className="relative">
           {virtualItems.map((row) => {
             const startIndex = row.index * lanes;
             const rowLaunches = launches.slice(startIndex, startIndex + lanes);

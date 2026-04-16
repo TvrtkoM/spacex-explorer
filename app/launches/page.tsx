@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { fetchLaunches } from "@/lib/api";
+import { makeQueryClient } from "@/lib/queryClient";
+import { queryKeys } from "@/lib/queryKeys";
+import { searchParamsCache, filterParsers } from "@/lib/filterParsers";
 import LaunchList from "@/components/launches/LaunchList";
+import { LaunchCardSkeleton } from "@/components/ui/Skeleton";
+import type { SearchParams } from "nuqs/server";
+import type { inferParserType } from "nuqs/server";
 
 export const metadata: Metadata = {
   title: "Launches — SpaceX Explorer",
@@ -7,7 +16,54 @@ export const metadata: Metadata = {
     "Browse all SpaceX launches. Filter by status, success, date range, and more.",
 };
 
-export default function LaunchesPage() {
+interface PageProps {
+  searchParams: Promise<SearchParams>;
+}
+
+// Separated async component so the page shell renders before this suspends.
+async function PrefetchedLaunchList({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const filters: inferParserType<typeof filterParsers> =
+    await searchParamsCache.parse(searchParams);
+
+  const queryClient = makeQueryClient();
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: queryKeys.launches(filters),
+    queryFn: ({ pageParam }) => fetchLaunches(filters, pageParam as number),
+    initialPageParam: 1,
+    pages: 1,
+    getNextPageParam: (lastPage) =>
+      (lastPage as Awaited<ReturnType<typeof fetchLaunches>>).nextPage ?? null,
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LaunchList />
+    </HydrationBoundary>
+  );
+}
+
+function LaunchListFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading launches"
+      className="space-y-6"
+    >
+      <div className="h-10 w-full animate-pulse rounded-lg bg-zinc-800" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <LaunchCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function LaunchesPage({ searchParams }: PageProps) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
       <div className="mb-8">
@@ -19,7 +75,9 @@ export default function LaunchesPage() {
         </p>
       </div>
 
-      <LaunchList />
+      <Suspense fallback={<LaunchListFallback />}>
+        <PrefetchedLaunchList searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }

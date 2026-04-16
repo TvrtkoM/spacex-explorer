@@ -4,32 +4,14 @@ import { useMemo } from "react";
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { fetchLaunches } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
-import type { LaunchFilters, LaunchStatusFilter, LaunchSuccessFilter, SortField, SortDirection } from "@/lib/types";
+import type { LaunchFilters } from "@/lib/types";
 import LaunchFiltersPanel from "./LaunchFilters";
 import LaunchListVirtual from "./LaunchListVirtual";
 import ErrorState from "@/components/ui/ErrorState";
 import EmptyState from "@/components/ui/EmptyState";
-import { useQueryStates, parseAsString, parseAsStringLiteral } from "nuqs";
-
-const DEFAULT_FILTERS: LaunchFilters = {
-  status: "all",
-  success: "all",
-  search: "",
-  dateFrom: "",
-  dateTo: "",
-  sortField: "date_utc",
-  sortDirection: "desc",
-};
-
-const filterParsers = {
-  status: parseAsStringLiteral(["all", "upcoming", "past"] as const).withDefault("all" as LaunchStatusFilter),
-  success: parseAsStringLiteral(["all", "success", "failure"] as const).withDefault("all" as LaunchSuccessFilter),
-  search: parseAsString.withDefault(""),
-  dateFrom: parseAsString.withDefault(""),
-  dateTo: parseAsString.withDefault(""),
-  sortField: parseAsStringLiteral(["date_utc", "name", "flight_number"] as const).withDefault("date_utc" as SortField),
-  sortDirection: parseAsStringLiteral(["asc", "desc"] as const).withDefault("desc" as SortDirection),
-};
+import { useQueryStates } from "nuqs";
+import { DEFAULT_FILTERS } from "@/lib/defaultFilters";
+import { filterParsers } from "@/lib/filterParsers";
 
 export default function LaunchList() {
   const [filters, setFilters] = useQueryStates(filterParsers, { history: "push" });
