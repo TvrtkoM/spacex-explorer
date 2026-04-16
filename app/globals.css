@@ -1,26 +1,17 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Tint native date input calendar icon to match dropdown chevron (zinc-400) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(67%) sepia(7%) saturate(330%) hue-rotate(201deg) brightness(95%) contrast(87%);
+  cursor: pointer;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Smooth scrollbar for dark backgrounds */
+* {
+  scrollbar-color: theme(colors.zinc.700) transparent;
+  scrollbar-width: thin;
 }
