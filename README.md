@@ -23,16 +23,15 @@ Chose **App Router** over Pages Router because:
 
 - Server Components let us fetch launch details server-side on the detail page, so metadata (title, description) is populated before the HTML lands — better SEO and no layout shift.
 - Async `params` / `searchParams` (mandatory in Next.js 16) are well-supported in App Router.
-- `loading.tsx` and `error.tsx` conventions give per-route Suspense boundaries for free.
 - Layouts compose cleanly without prop-drilling.
 
-The launches *list* page is a Client Component because it needs interactive filters, infinite scroll via IntersectionObserver, and accumulated state across pages — Server Component rendering would reset state on every navigation.
+The launches *list* page is a Client Component because it needs interactive filters & infinite scroll, and accumulated state across pages
 
 ### TanStack Query (React Query v5) over SWR
 
 - **Accumulate pages client-side** while keeping each page in the cache; individual pages stay deduplicated and stale-while-revalidate.
 - **Built-in retry with configurable delay**: `retryDelay` uses exponential backoff; `retry` callback skips retries on 4xx (except 429) so we don't hammer the API on bad requests.
-- **`keepPreviousData`**: filter changes show the previous result set while the new query loads — no flash of empty state.
+- **`keepPreviousData`**: filter changes show the previous result set while the new query loads, no flash of empty state.
 - **`useQueries`**: the Favorites page fetches N launches in parallel with a single hook, automatically deduplicating against the shared cache.
 
 ### SpaceX API usage
@@ -66,11 +65,11 @@ Rocket and launchpad details are fetched by ID on the detail page using `GET /ro
 
 ## Performance
 
-- **Server-side pagination**: each request fetches exactly 12 launches — no over-fetching.
-- **Infinite scroll via IntersectionObserver**: the sentinel div 200px below the fold triggers the next page fetch automatically; a manual "Load more" button is also rendered for keyboard/AT users.
+- **Server-side pagination**: each request fetches exactly 48 launches — no over-fetching.
+- **Infinite scroll with virtualization**: virtualization done with @tanstack/react-virtual library, launches list only shows a subset of data that has to be shown to reduce DOM load
 - **`memo`** on `LaunchCard`: prevents re-renders when the parent list re-renders after a new page loads.
 - **`keepPreviousData`**: filter changes show the old results while the new query is in-flight, eliminating skeleton flashes on every filter interaction.
-- **Stale times**: launches list — 1 minute; rockets/launchpads — 10 minutes (near-static data).
+- **Stale times**: 1 minute on launches; a0 minutes on rockets/launchpads.
 - **Parallel fetching**: on the Favorites page, `useQueries` fans out N individual launch fetches that share the query cache with the list page — no duplicate network requests.
 
 ## Accessibility
@@ -80,21 +79,24 @@ Rocket and launchpad details are fetched by ID on the detail page using `GET /ro
 - Filters use `<label>` + `htmlFor` associations; the search input has a visually-hidden `<label>`.
 - Loading states use `role="status"` + `aria-label`; error states use `role="alert"`.
 - The image gallery uses `role="tablist"` / `role="tab"` + `aria-selected` for thumbnail navigation.
-- `aria-live="polite"` on the "loading more" spinner.
 - `aria-current="page"` on the active nav link.
 - `aria-pressed` on favorite toggle buttons.
 - Semantic HTML throughout: `<main>`, `<header>`, `<nav>`, `<article>`, `<section>`, `<dl>`, `<time>`.
 
 ## Tradeoffs and what I'd do next
 
+**SSG / SSR vs Client-side only rendering**: launches page uses SSR and launch details page SSG.
+SSR: server fetches data and renders HTML on every request. Browser receives meaningful content immediately. Tradoff of using SSR is that it increases compute cost per request and for CSR this cost doesn't exist
+SSG: fastest possible response time and best for SEO. Useful for pages that doesn't change often, like blog posts or in our case details of SpaceX launches so it's not good solution that require highly dynamic content. Another tradeoff is taht application build time grows with number of SSG rendered pages required
+
+SSR/SSG pages can increase code complexity since hydration logic has to be added when using e.g. `@tanstack/query` and requires breaking down logic into Server components.
+
 ### What I'd add with more time
 
-- **Charts**: launches per year / success rate using Recharts — a `<ResponsiveContainer>` bar chart grouped by `date_utc` year.
-- **Launch comparison**: a `/compare?a=<id>&b=<id>` route rendering two launches side-by-side. Shareable because the IDs live in the URL.
-- **Service worker / offline**: cache favorites and their detail pages via Workbox for offline support.
-- **SSG for detail pages**: `generateStaticParams` for past launches + ISR (`revalidate: 3600`) — pre-rendered at build time, revalidated hourly.
-- **Debounced search**: 300ms debounce on the search input to reduce API calls.
-- **URL-synced filters**: persist filter state in query params (`?status=past&q=starlink`) so deep links and browser back/forward work correctly.
+- **Make reusable components**: components like buttons, dropdowns and similar could be reused by using React components instead of writing same code over again
+- **Brand identity**: change colors and component styling to reflect SpaceX brand
+- **Launch comparison**: `/compare?a=<id>&b=<id>` route rendering two launches side-by-side. Shareable because the IDs live in the URL.
+- **Service worker / offline**: cache favorites and their detail pages for offline support. Current suggestion in Next.js documentation suggest using Serwist library which needs webpack, which is not used for Next.js build process at the moment
 
 ### Known limitations
 

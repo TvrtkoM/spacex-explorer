@@ -13,6 +13,8 @@ import type {
 
 interface LaunchFiltersProps {
   filters: Filters;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
   onChange: (filters: Filters) => void;
 }
 
@@ -39,6 +41,8 @@ function SelectWrapper({ children }: { children: React.ReactNode }) {
 
 export default function LaunchFiltersPanel({
   filters,
+  searchValue,
+  onSearchChange,
   onChange,
 }: LaunchFiltersProps) {
   const update = useCallback(
@@ -63,7 +67,7 @@ export default function LaunchFiltersPanel({
   const isFiltered =
     filters.status !== "all" ||
     filters.success !== "all" ||
-    filters.search !== "" ||
+    searchValue !== "" ||
     filters.dateFrom !== "" ||
     filters.dateTo !== "";
 
@@ -78,8 +82,8 @@ export default function LaunchFiltersPanel({
           <input
             id="search"
             type="search"
-            value={filters.search}
-            onChange={(e) => update("search", e.target.value)}
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search missions…"
             className={inputClass("w-full pl-9")}
           />

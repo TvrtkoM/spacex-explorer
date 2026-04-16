@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useDebounce } from "@uidotdev/usehooks";
 import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { fetchLaunches } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
@@ -15,10 +16,14 @@ import { filterParsers } from "@/lib/filterParsers";
 
 export default function LaunchList() {
   const [filters, setFilters] = useQueryStates(filterParsers, { history: "push" });
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const debouncedSearch = useDebounce(searchInput, 400);
+
+  const activeFilters = { ...filters, search: debouncedSearch };
 
   const fetch = ({ pageParam }: { pageParam: unknown }) => {
     if (typeof pageParam === 'string' || typeof pageParam === 'number') {
-      return fetchLaunches(filters, +pageParam)
+      return fetchLaunches(activeFilters, +pageParam)
     }
   }
 
@@ -27,7 +32,7 @@ export default function LaunchList() {
     getNextPageParam: (lastPage) => {
       return lastPage?.nextPage ?? null
     },
-    queryKey: queryKeys.launches(filters),
+    queryKey: queryKeys.launches(activeFilters),
     queryFn: fetch,
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
@@ -35,6 +40,7 @@ export default function LaunchList() {
 
   const handleFiltersChange = (newFilters: LaunchFilters) => {
     setFilters(newFilters);
+    setSearchInput(newFilters.search);
     refetch();
   }
 
@@ -49,7 +55,12 @@ export default function LaunchList() {
 
   return (
     <div className="space-y-6">
-      <LaunchFiltersPanel filters={filters} onChange={handleFiltersChange} />
+      <LaunchFiltersPanel
+        filters={filters}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        onChange={handleFiltersChange}
+      />
 
       {totalDocs > 0 && !isFirstLoad && (
         <p className="text-sm text-zinc-500">

@@ -62,7 +62,6 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// Build Mongoose-compatible query from our filters
 function buildLaunchQuery(
   filters: LaunchFilters,
   page: number
