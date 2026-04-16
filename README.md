@@ -91,12 +91,13 @@ SSG: fastest possible response time and best for SEO. Useful for pages that does
 
 SSR/SSG pages can increase code complexity since hydration logic has to be added when using e.g. `@tanstack/query` and requires breaking down logic into Server components.
 
-### What I'd add with more time
+### What I'd add with more time (TODO)
 
 - **Make reusable components**: components like buttons, dropdowns and similar could be reused by using React components instead of writing same code over again
 - **Brand identity**: change colors and component styling to reflect SpaceX brand
 - **Launch comparison**: `/compare?a=<id>&b=<id>` route rendering two launches side-by-side. Shareable because the IDs live in the URL.
 - **Service worker / offline**: cache favorites and their detail pages for offline support. Current suggestion in Next.js documentation suggest using Serwist library which needs webpack, which is not used for Next.js build process at the moment
+- **TSDoc for rest of the app**: currently only code inside lib directory is documented with TSDoc comments. 
 
 ### Known limitations
 

@@ -12,7 +12,18 @@ import type {
 const BASE_URL = "https://api.spacexdata.com/v4";
 const DEFAULT_PAGE_SIZE = 48;
 
-// Retry with exponential backoff for 429 and 5xx
+/**
+ * Performs an HTTP request with exponential-backoff retries for transient
+ * errors (HTTP 429 and 5xx responses, as well as network failures).
+ *
+ * @param url - The full URL to fetch.
+ * @param options - Standard `fetch` init options (method, headers, body, …).
+ * @param retries - Maximum number of attempts before throwing. Defaults to `3`.
+ * @param baseDelayMs - Delay for the first retry in milliseconds. Each
+ *   subsequent attempt doubles the delay. Defaults to `500`.
+ * @returns The successful `Response` object.
+ * @throws The last encountered `Error` when all attempts are exhausted.
+ */
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
@@ -46,6 +57,19 @@ async function fetchWithRetry(
   throw lastError ?? new Error("Request failed after retries");
 }
 
+/**
+ * Low-level helper that issues a request to the SpaceX API and deserialises
+ * the JSON response body.
+ *
+ * Automatically prepends {@link BASE_URL} to `path` and sets the
+ * `Content-Type: application/json` header.
+ *
+ * @typeParam T - Expected shape of the parsed response body.
+ * @param path - API path relative to the base URL (e.g. `"/launches/query"`).
+ * @param init - Optional `fetch` init overrides.
+ * @returns A promise that resolves to the parsed response of type `T`.
+ * @throws An `Error` with HTTP status information when the response is not OK.
+ */
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetchWithRetry(
     `${BASE_URL}${path}`,
@@ -62,6 +86,13 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/**
+ * Translates the application filter state into a SpaceX API query body.
+ *
+ * @param filters - The currently active launch filters.
+ * @param page - The 1-based page number to request.
+ * @returns A {@link LaunchQuery} ready to be serialised as the POST body.
+ */
 function buildLaunchQuery(
   filters: LaunchFilters,
   page: number
@@ -110,6 +141,13 @@ function buildLaunchQuery(
   return { query, options };
 }
 
+/**
+ * Fetches a paginated list of launches matching the given filters.
+ *
+ * @param filters - Active filter and sort state.
+ * @param page - 1-based page number to retrieve.
+ * @returns A paginated response containing matching {@link Launch} documents.
+ */
 export async function fetchLaunches(
   filters: LaunchFilters,
   page: number
@@ -121,19 +159,46 @@ export async function fetchLaunches(
   });
 }
 
+/**
+ * Fetches the full detail record for a single launch.
+ *
+ * @param id - The launch ID.
+ * @returns The matching {@link Launch} document.
+ */
 export async function fetchLaunchById(id: string): Promise<Launch> {
   return apiFetch<Launch>(`/launches/${id}`);
 }
 
+/**
+ * Fetches the full detail record for a single rocket.
+ *
+ * @param id - The rocket ID.
+ * @returns The matching {@link Rocket} document.
+ */
 export async function fetchRocketById(id: string): Promise<Rocket> {
   return apiFetch<Rocket>(`/rockets/${id}`);
 }
 
+/**
+ * Fetches the full detail record for a single launchpad.
+ *
+ * @param id - The launchpad ID.
+ * @returns The matching {@link Launchpad} document.
+ */
 export async function fetchLaunchpadById(id: string): Promise<Launchpad> {
   return apiFetch<Launchpad>(`/launchpads/${id}`);
 }
 
-// Fetch all past launches with only fields needed for charts
+/**
+ * Fetches minimal data for all past launches, optimised for chart rendering.
+ *
+ * Only the `date_utc`, `success`, and `upcoming` fields are requested, keeping
+ * the payload small. Pagination is disabled so the full dataset is returned in
+ * a single response.
+ *
+ * @returns An array of objects containing `date_utc`, `success`, and `upcoming`
+ *   for every past launch.
+ */
 export async function fetchAllLaunchesForCharts(): Promise<
   Array<{ date_utc: string; success: boolean | null; upcoming: boolean }>
 > {
