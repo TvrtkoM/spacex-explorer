@@ -12,75 +12,29 @@ import type {
 const BASE_URL = "https://api.spacexdata.com/v4";
 const DEFAULT_PAGE_SIZE = 48;
 
-/**
- * Performs an HTTP request with exponential-backoff retries for transient
- * errors (HTTP 429 and 5xx responses, as well as network failures).
- *
- * @param url - The full URL to fetch.
- * @param options - Standard `fetch` init options (method, headers, body, …).
- * @param retries - Maximum number of attempts before throwing. Defaults to `3`.
- * @param baseDelayMs - Delay for the first retry in milliseconds. Each
- *   subsequent attempt doubles the delay. Defaults to `500`.
- * @returns The successful `Response` object.
- * @throws The last encountered `Error` when all attempts are exhausted.
- */
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  retries = 3,
-  baseDelayMs = 500
-): Promise<Response> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      const res = await fetch(url, options);
-
-      if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-        // Exponential backoff: 500ms, 1000ms, 2000ms
-        const delay = baseDelayMs * Math.pow(2, attempt);
-        await new Promise((r) => setTimeout(r, delay));
-        lastError = new Error(`HTTP ${res.status}`);
-        continue;
-      }
-
-      return res;
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (attempt < retries - 1) {
-        const delay = baseDelayMs * Math.pow(2, attempt);
-        await new Promise((r) => setTimeout(r, delay));
-      }
-    }
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
   }
-
-  throw lastError ?? new Error("Request failed after retries");
 }
 
 /**
- * Low-level helper that issues a request to the SpaceX API and deserialises
- * the JSON response body.
- *
- * Automatically prepends {@link BASE_URL} to `path` and sets the
- * `Content-Type: application/json` header.
+ * Issues a typed request to the SpaceX API and deserialises the JSON response.
  *
  * @typeParam T - Expected shape of the parsed response body.
  * @param path - API path relative to the base URL (e.g. `"/launches/query"`).
  * @param init - Optional `fetch` init overrides.
- * @returns A promise that resolves to the parsed response of type `T`.
- * @throws An `Error` with HTTP status information when the response is not OK.
+ * @throws {@link ApiError} on non-2xx responses.
  */
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetchWithRetry(
-    `${BASE_URL}${path}`,
-    {
-      headers: { "Content-Type": "application/json" },
-      ...init,
-    }
-  );
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
 
   if (!res.ok) {
-    throw new Error(`SpaceX API error: ${res.status} ${res.statusText}`);
+    throw new ApiError(res.status, `SpaceX API error: ${res.status} ${res.statusText}`);
   }
 
   return res.json() as Promise<T>;

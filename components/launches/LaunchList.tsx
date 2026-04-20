@@ -41,7 +41,6 @@ export default function LaunchList() {
   const handleFiltersChange = (newFilters: LaunchFilters) => {
     setFilters(newFilters);
     setSearchInput(newFilters.search);
-    refetch();
   }
 
   const allPages = useMemo(() => data?.pages ?? [], [data?.pages]);
