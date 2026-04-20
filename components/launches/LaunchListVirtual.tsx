@@ -94,8 +94,6 @@ export default function LaunchListVirtual({
             return (
               <div
                 key={row.key}
-                data-index={row.index}
-                ref={virtualizer.measureElement}
                 className="absolute inset-x-0 grid pb-4"
                 style={{
                   top: row.start,
