@@ -73,9 +73,9 @@ export default function LaunchesPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <Suspense fallback={<LaunchListFallback />}>
+      {/* <Suspense fallback={<LaunchListFallback />}> */}
         <PrefetchedLaunchList searchParams={searchParams} />
-      </Suspense>
+      {/* </Suspense> */}
     </main>
   );
 }
