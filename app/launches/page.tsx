@@ -4,11 +4,10 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { fetchLaunches } from "@/lib/api";
 import { makeQueryClient } from "@/lib/queryClient";
 import { queryKeys } from "@/lib/queryKeys";
-import { searchParamsCache, filterParsers } from "@/lib/filterParsers";
+import { searchParamsCache } from "@/lib/filterParsers";
 import LaunchList from "@/components/launches/LaunchList";
 import { LaunchCardSkeleton } from "@/components/ui/Skeleton";
 import type { SearchParams } from "nuqs/server";
-import type { inferParserType } from "nuqs/server";
 
 export const metadata: Metadata = {
   title: "Launches — SpaceX Explorer",
@@ -26,17 +25,16 @@ async function PrefetchedLaunchList({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const filters: inferParserType<typeof filterParsers> =
-    await searchParamsCache.parse(searchParams);
+  const filters = await searchParamsCache.parse(searchParams);
 
   const queryClient = makeQueryClient();
   await queryClient.prefetchInfiniteQuery({
     queryKey: queryKeys.launches(filters),
-    queryFn: ({ pageParam }) => fetchLaunches(filters, pageParam as number),
+    queryFn: ({ pageParam }) => fetchLaunches(filters, pageParam),
     initialPageParam: 1,
     pages: 1,
     getNextPageParam: (lastPage) =>
-      (lastPage as Awaited<ReturnType<typeof fetchLaunches>>).nextPage ?? null,
+      lastPage.nextPage ?? null,
   });
 
   return (

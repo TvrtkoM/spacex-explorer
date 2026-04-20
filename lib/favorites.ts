@@ -3,7 +3,7 @@
 const STORAGE_KEY = "spacex-favorites";
 const CHANGE_EVENT = "spacex-favorites-change";
 
-let cachedRaw: string | null = undefined as unknown as string | null;
+let cachedRaw: string | null = null;
 let cachedSnapshot: string[] = [];
 
 /**
@@ -24,7 +24,7 @@ export function getFavorites(): string[] {
     if (!raw) return (cachedSnapshot = []);
     const parsed: unknown = JSON.parse(raw);
     cachedSnapshot = Array.isArray(parsed)
-      ? parsed.filter((x): x is string => typeof x === "string")
+      ? parsed.filter((x) => typeof x === "string")
       : [];
     return cachedSnapshot;
   } catch {
