@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { fetchLaunches } from "@/lib/api";
 import { makeQueryClient } from "@/lib/queryClient";
 import { queryKeys } from "@/lib/queryKeys";
 import { searchParamsCache } from "@/lib/filterParsers";
 import LaunchList from "@/components/launches/LaunchList";
-import { LaunchCardSkeleton } from "@/components/ui/Skeleton";
 import type { SearchParams } from "nuqs/server";
 
 export const metadata: Metadata = {
@@ -44,23 +42,6 @@ async function PrefetchedLaunchList({
   );
 }
 
-function LaunchListFallback() {
-  return (
-    <div
-      role="status"
-      aria-label="Loading launches"
-      className="space-y-6"
-    >
-      <div className="h-10 w-full animate-pulse rounded-lg bg-zinc-800" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <LaunchCardSkeleton key={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function LaunchesPage({ searchParams }: PageProps) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
@@ -73,9 +54,7 @@ export default function LaunchesPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <Suspense fallback={<LaunchListFallback />}>
-        <PrefetchedLaunchList searchParams={searchParams} />
-      </Suspense>
+      <PrefetchedLaunchList searchParams={searchParams} />
     </main>
   );
 }

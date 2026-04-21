@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useSyncExternalStore } from "react";
+import { useRef, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Launch } from "@/lib/types";
 import LaunchCard from "./LaunchCard";
@@ -45,8 +45,19 @@ export default function LaunchListVirtual({
   isLoading = false,
 }: LaunchListVirtualProps) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const preHydrationScrollTop = useRef(0);
+  const [mounted, setMounted] = useState(false);
   const lanes = useLanes();
   const rowCount = Math.ceil(launches.length / lanes);
+
+  useLayoutEffect(() => {
+    preHydrationScrollTop.current = gridRef.current?.scrollTop ?? 0;
+    setMounted(true);
+  }, []);
+
+  if (mounted && gridRef.current && preHydrationScrollTop.current > 0) {
+    gridRef.current.scrollTop = preHydrationScrollTop.current;
+  }
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
@@ -75,7 +86,7 @@ export default function LaunchListVirtual({
       className="h-[calc(100vh-500px)] overflow-y-auto"
       aria-label="Launches"
     >
-      {isLoading && launches.length === 0 ? (
+      {isLoading ? (
         <div
           role="status"
           aria-label="Loading launches"
@@ -86,7 +97,14 @@ export default function LaunchListVirtual({
           ))}
         </div>
       ) : (
-        <div style={{ height: (isFetching && hasMore ? ROW_HEIGHT + totalSize : 0) }} className="relative">
+        <div style={{ height: mounted ? totalSize + (isFetching && hasMore ? ROW_HEIGHT : 0): "auto" }} className="relative">
+          {!mounted && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {launches.map((launch) => (
+                <LaunchCard key={launch.id} launch={launch} />
+              ))}
+            </div>
+          )}
           {virtualItems.map((row) => {
             const startIndex = row.index * lanes;
             const rowLaunches = launches.slice(startIndex, startIndex + lanes);
