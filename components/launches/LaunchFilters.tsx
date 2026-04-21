@@ -10,6 +10,7 @@ import type {
   SortField,
   SortDirection,
 } from "@/lib/types";
+import { useIsHydrated } from "@/lib/useIsHydrated";
 
 interface LaunchFiltersProps {
   filters: Filters;
@@ -45,6 +46,7 @@ export default function LaunchFiltersPanel({
   onSearchChange,
   onChange,
 }: LaunchFiltersProps) {
+  const isHydrated = useIsHydrated();
   const update = useCallback(
     <K extends keyof Filters>(key: K, value: Filters[K]) => {
       onChange({ ...filters, [key]: value });
@@ -86,6 +88,7 @@ export default function LaunchFiltersPanel({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search missions…"
             className={inputClass("w-full pl-9")}
+            disabled={!isHydrated}
           />
         </div>
       </div>
@@ -103,6 +106,7 @@ export default function LaunchFiltersPanel({
                 update("status", e.target.value as LaunchStatusFilter)
               }
               className={selectClass()}
+              disabled={!isHydrated}
             >
               <option value="all">All launches</option>
               <option value="upcoming">Upcoming</option>
@@ -123,6 +127,7 @@ export default function LaunchFiltersPanel({
                 update("success", e.target.value as LaunchSuccessFilter)
               }
               className={selectClass()}
+              disabled={!isHydrated}
             >
               <option value="all">All results</option>
               <option value="success">Success</option>
@@ -141,6 +146,7 @@ export default function LaunchFiltersPanel({
               value={filters.sortField}
               onChange={(e) => update("sortField", e.target.value as SortField)}
               className={selectClass()}
+              disabled={!isHydrated}
             >
               <option value="date_utc">Date</option>
               <option value="name">Name</option>
@@ -161,6 +167,7 @@ export default function LaunchFiltersPanel({
                 update("sortDirection", e.target.value as SortDirection)
               }
               className={selectClass()}
+              disabled={!isHydrated}
             >
               <option value="desc">Descending</option>
               <option value="asc">Ascending</option>
@@ -178,6 +185,7 @@ export default function LaunchFiltersPanel({
             value={filters.dateFrom}
             onChange={(e) => update("dateFrom", e.target.value)}
             className={inputClass()}
+            disabled={!isHydrated}
           />
         </div>
 
@@ -191,6 +199,7 @@ export default function LaunchFiltersPanel({
             value={filters.dateTo}
             onChange={(e) => update("dateTo", e.target.value)}
             className={inputClass()}
+            disabled={!isHydrated}
           />
         </div>
 
