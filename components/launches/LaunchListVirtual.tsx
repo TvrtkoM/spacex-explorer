@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useSyncExternalStore } from "react";
+import { useRef, useEffect, useState, useSyncExternalStore } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import type { Launch } from "@/lib/types";
 import LaunchCard from "./LaunchCard";
@@ -46,15 +46,23 @@ export default function LaunchListVirtual({
   isLoading = false
 }: LaunchListVirtualProps) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
   const lanes = useLanes();
   const rowCount = Math.ceil(launches.length / lanes);
   const isHydrated = useIsHydrated();
+
+  useEffect(() => {
+    if (gridRef.current && isHydrated) {
+      setScrollMargin(gridRef.current.offsetTop);
+    }
+  }, [isHydrated]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useWindowVirtualizer({
     count: rowCount,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 3
+    overscan: 3,
+    scrollMargin
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -106,7 +114,7 @@ export default function LaunchListVirtual({
                   key={row.key}
                   className="absolute inset-x-0 grid pb-4"
                   style={{
-                    top: row.start,
+                    top: row.start - scrollMargin,
                     gridTemplateColumns: `repeat(${lanes}, minmax(0, 1fr))`,
                     gap: CARD_GAP
                   }}
