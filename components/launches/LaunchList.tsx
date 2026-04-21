@@ -34,7 +34,7 @@ export default function LaunchList() {
     },
     queryKey: queryKeys.launches(activeFilters),
     queryFn: fetch,
-    placeholderData: keepPreviousData,
+    //placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   });
 
@@ -98,6 +98,7 @@ export default function LaunchList() {
         hasMore={hasNextPage}
         isFetching={isFetching}
         isLoading={isFirstLoad}
+        key={JSON.stringify(activeFilters)}
       />
     </div>
   );
