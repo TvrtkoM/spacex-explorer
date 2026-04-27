@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { fetchLaunchById, fetchRocketById, fetchLaunchpadById, fetchLaunches } from "@/lib/api";
-import { makeQueryClient } from "@/lib/queryClient";
-import { queryKeys } from "@/lib/queryKeys";
-import { DEFAULT_FILTERS } from "@/lib/defaultFilters";
 import LaunchDetailClient from "@/components/launches/LaunchDetailClient";
 import ErrorState from "@/components/ui/ErrorState";
+import { fetchLaunchById, fetchLaunches, fetchLaunchpadById, fetchRocketById } from "@/lib/api";
+import { DEFAULT_FILTERS } from "@/lib/defaultFilters";
+import { getQueryClient } from "@/lib/queryClient";
+import { queryKeys } from "@/lib/queryKeys";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 // ISR: revalidate detail pages every 5 minutes
 export const revalidate = 300;
@@ -52,8 +52,7 @@ async function LaunchDetailServer({ id }: { id: string }) {
 
   if (!launch) notFound();
 
-  // Prefetch rocket and launchpad so the client cache is pre-seeded
-  const queryClient = makeQueryClient();
+  const queryClient = getQueryClient();
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: queryKeys.rocket(launch.rocket),

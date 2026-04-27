@@ -1,19 +1,7 @@
-import { QueryClient } from "@tanstack/react-query";
+import { environmentManager, QueryClient } from "@tanstack/react-query";
 import { ApiError } from "./api";
 
-/**
- * Creates a new TanStack `QueryClient` with application-wide default options.
- *
- * **Defaults:**
- * - `staleTime` — 60 seconds.
- * - `gcTime` — 5 minutes.
- * - `retry` — Up to 3 attempts. 4xx errors (except 429) are not retried.
- * - `retryDelay` — Exponential backoff starting at 500 ms, capped at 30 s.
- *
- * A new instance must be created per request in SSR environments to prevent
- * cross-request state leaking between users.
- */
-export function makeQueryClient() {
+function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -29,4 +17,17 @@ export function makeQueryClient() {
       },
     },
   });
+}
+
+let browserQueryClient: QueryClient | null = null;
+
+export function getQueryClient() {
+  if (environmentManager.isServer()) {
+    return makeQueryClient()
+  } else {
+    if (!browserQueryClient) {
+      browserQueryClient = makeQueryClient();
+    }
+    return browserQueryClient;
+  }
 }
